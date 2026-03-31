@@ -1,56 +1,51 @@
 education:
-  - degree: "Ph.D. in Computer Science"
-    institution: "Massachusetts Institute of Technology"
-    year: "2017–2021"
-    description: "Thesis: Neural Approaches to Cross-Lingual NLP."
-  - degree: "B.S. in Computer Science (Highest Honors)"
-    institution: "University of California, Berkeley"
-    year: "2013–2017"
-    description: "Graduated summa cum laude."
+  - degree: "M.S. in Data Science"
+    institution: "Open University of Catalonia"
+    year: "2023–2025"
+    description: "After one year out of academia, I pursued a M.S. in Data Science. Graduated with a degree of 9.22/10. Thesis: From Raw Ocean Audio to Robust Bioacoustic Representations: A Self-Supervised Pipeline for Underwater Sound Analysis."
+  - degree: "B.S. in Telecommunications Engineering"
+    institution: "Politechnical University of Cartagena"
+    year: "2018–2022"
+    description: "Degree: 7.8/10."
 
 experience:
-  - title: "Assistant Professor"
-    organization: "Greendale University"
-    start_date: "2022"
+  - title: "Deep Learning Engineer"
+    organization: "CTN"
+    start_date: "April 2024"
     end_date: "Present"
-    description: "Leading the Language, Learning & Fairness Lab."
-  - title: "Postdoctoral Researcher"
-    organization: "Google DeepMind"
-    start_date: "2021"
-    end_date: "2022"
-    description: "Large language model alignment and safety."
-  - title: "Research Intern"
-    organization: "Meta AI (FAIR)"
-    start_date: "Summer 2020"
-    end_date: "Summer 2020"
-    description: "Multilingual NLP and cross-lingual transfer."
+    description: "Applying Deep Learning in numerous projects and contracts. Also leading software engineering best practices in my team."
+  - title: "Data Scientist"
+    organization: "CTN"
+    start_date: "November 2022"
+    end_date: "April 2024"
+    description: "Worked across the full data lifecycle (from data gathering and processing to model training and deployment) in numerous european R&D projects."
 
 skills:
   - category: "Programming"
-    items: ["Python", "PyTorch", "JAX", "C++", "TypeScript"]
-  - category: "ML/NLP"
-    items: ["Transformers", "Reinforcement Learning", "Multimodal Learning", "Fairness"]
-  - category: "Tools"
-    items: ["Git", "Docker", "Kubernetes", "LaTeX", "Weights & Biases"]
+    items: ["Python", "Bash"]
+  - category: "Deep/Machine Learning"
+    items: ["PyTorch", "Torchvision", "Torchaudio", "Scikit-learn", "Transformers"]
+  - category: "Software Engineering"
+    items: ["Git", "Docker", "Redis", "Celery", "PostgreSQL", "pgvector", "Weights and Biases", "MLFlow"]
 
-awards:
-  - title: "NSF CAREER Award"
-    organization: "National Science Foundation"
-    year: 2024
-  - title: "Best Paper Award"
-    organization: "ACL 2023"
-    year: 2023
-  - title: "Outstanding Dissertation Award"
-    organization: "MIT EECS"
-    year: 2021
-  - title: "Google PhD Fellowship"
-    organization: "Google"
-    year: 2019
+# awards:
+#   - title: "NSF CAREER Award"
+#     organization: "National Science Foundation"
+#     year: 2024
+#   - title: "Best Paper Award"
+#     organization: "ACL 2023"
+#     year: 2023
+#   - title: "Outstanding Dissertation Award"
+#     organization: "MIT EECS"
+#     year: 2021
+#   - title: "Google PhD Fellowship"
+#     organization: "Google"
+#     year: 2019
 
-service:
-  - role: "Area Chair"
-    organization: "ACL, EMNLP, NAACL"
-    years: "2023–Present"
-  - role: "Reviewer"
-    organization: "NeurIPS, ICML, ICLR, JMLR"
-    years: "2019–Present"
+# service:
+#   - role: "Area Chair"
+#     organization: "ACL, EMNLP, NAACL"
+#     years: "2023–Present"
+#   - role: "Reviewer"
+#     organization: "NeurIPS, ICML, ICLR, JMLR"
+#     years: "2019–Present"

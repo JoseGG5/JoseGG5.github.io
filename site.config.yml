@@ -2,61 +2,58 @@
 # Edit this file to configure your site. Toggle pages, set info, customize theme.
 
 site:
-  title: "Richard D. Sanchez"
-  description: "Assistant Professor of Computer Science"
-  url: "https://username.github.io"
+  title: "Jose Antonio García"
+  description: "Deep Learning Engineer"
+  url: "https://JoseGG5.github.io"
   language: "en"
 
 profile:
-  name: "Richard Daniel Sanchez"
-  position: "Assistant Professor"
-  affiliation: "Department of Computer Science"
-  university: "Greendale University"
-  email: "r.sanchez@greendale.edu"
-  avatar: "/images/avatar.svg"
-  bio: "I am an Assistant Professor of Computer Science at Greendale University. My research focuses on machine learning, natural language processing, and AI for social good."
-  bio_short: "Researching ML, NLP, and AI for social good."
+  name: "Jose Antonio García"
+  position: "Deep Learning Engineer"
+  affiliation: "CTN"
+  #university: "Greendale University"
+  email: "jose.jagg11@gmail.com"
+  avatar: "/images/jose.jpeg"
+  # bio: "I am an Assistant Professor of Computer Science at Greendale University. My research focuses on machine learning, natural language processing, and AI for social good."
+  # bio_short: "Researching ML, NLP, and AI for social good."
 
 social:
-  google_scholar: "https://scholar.google.com/citations?user=XXXXXXX"
-  github: "https://github.com/username"
-  twitter: "https://twitter.com/username"
-  linkedin: "https://linkedin.com/in/username"
-  orcid: "https://orcid.org/0000-0000-0000-0000"
-  semantic_scholar: ""
-  dblp: ""
-  email: "r.sanchez@greendale.edu"
+  # google_scholar: "https://scholar.google.com/citations?user=XXXXXXX"
+  github: "https://github.com/JoseGG5"
+  linkedin: "https://www.linkedin.com/in/jose-antonio-garc%C3%ADa-gamb%C3%ADn-232774140/"
+  # orcid: "https://orcid.org/0000-0000-0000-0000"
+  email: "jose.jagg11@gmail.com"
 
 pages:
   about: true
-  publications: true
+  publications: false
   cv: true
   projects: true
-  news: true
-  teaching: true
+  news: false
+  teaching: false
   talks: true
-  awards: true
-  team: true
-  positions: true
-  collaborators: true
-  service: true
+  awards: false
+  team: false
+  positions: false
+  collaborators: false
+  service: false
   repositories: true
   blog: true
-  gallery: true
-  books: true
-  media: true
+  gallery: false
+  books: false
+  media: false
   travel: true
 
 theme:
   cursor_spotlight: false
-  style: "modern"
-  palette: "default"
+  style: "retro"
+  palette: "burgundy"
   random_theme: false
   avatars:
-    - "/images/avatar.svg"
+    - "/images/jose.jpeg"
 
 publications:
-  author_name: "Richard Daniel Sanchez"
+  author_name: "Jose Antonio García"
   bibtex_file: "papers.bib"
   group_by_year: true
   show_badges: true

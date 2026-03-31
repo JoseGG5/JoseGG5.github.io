@@ -1,16 +1,12 @@
 repositories:
-  - name: "efficient-transfer"
-    description: "Code for efficient knowledge transfer methods"
-    url: "https://github.com/username/efficient-transfer"
+  - name: "dl-models"
+    description: "An educational repository containing from scratch implementations of Deep Learning models I find interesting"
+    url: "https://github.com/JoseGG5/dl_models"
     language: "Python"
-    stars: 234
-  - name: "fairness-ml"
-    description: "Fairness-aware machine learning toolkit"
-    url: "https://github.com/username/fairness-ml"
+    stars: 0
+  - name: "easyhnsw"
+    description: "A simple and educational implementation of HNSW index for my YouTube channel"
+    url: "https://github.com/JoseGG5/easyhnsw"
     language: "Python"
-    stars: 512
-  - name: "cross-lingual-nlu"
-    description: "Cross-lingual NLU benchmarks and models"
-    url: "https://github.com/username/cross-lingual-nlu"
-    language: "Python"
-    stars: 178
+    stars: 0
+

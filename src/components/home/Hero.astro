@@ -36,19 +36,40 @@ function isValidHref(href: string): boolean {
 }
 
 function renderSimpleMarkdown(md: string): string {
-  const escaped = escapeHtml(md);
-  return escaped
+  const escaped = escapeHtml(md).replace(/\r\n/g, '\n').trim();
+
+  const formatted = escaped
     .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-    .replace(/\n## (.*)\n/g, '<h2 class="text-xl font-semibold mt-8 mb-3">$1</h2>')
-    .replace(/\n- (.*)/g, '<li class="ml-4">$1</li>')
-    .replace(/(<li[\s\S]*?<\/li>)/g, '<ul class="list-disc space-y-1 my-3">$1</ul>')
     .replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_, text, href) => {
       if (!isValidHref(href)) return text;
       return `<a href="${href}" class="text-[var(--color-accent)] hover:underline">${text}</a>`;
+    });
+
+  const blocks = formatted
+    .split(/\n\s*\n/)
+    .map(block => block.trim())
+    .filter(Boolean);
+
+  return blocks
+    .map(block => {
+      if (block.startsWith('## ')) {
+        return `<h2 class="text-xl font-semibold mt-8 mb-3">${block.slice(3)}</h2>`;
+      }
+
+      if (block.split('\n').every(line => line.trim().startsWith('- '))) {
+        const items = block
+          .split('\n')
+          .map(line => line.trim())
+          .filter(Boolean)
+          .map(line => `<li class="ml-4">${line.slice(2)}</li>`)
+          .join('');
+
+        return `<ul class="list-disc space-y-1 my-3">${items}</ul>`;
+      }
+
+      return `<p class="mb-4">${block.replace(/\n/g, '<br />')}</p>`;
     })
-    .replace(/\n\n/g, '</p><p class="mb-4">')
-    .replace(/^/, '<p class="mb-4">')
-    .replace(/$/, '</p>');
+    .join('');
 }
 ---
 

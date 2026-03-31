@@ -1,0 +1,71 @@
+---
+title: "Demo Blog Post: Text, Images, Code, and More"
+date: 2026-03-31
+description: "A sample post showing the kinds of content this blog can render."
+tags: ["demo", "blog", "markdown", "astro"]
+draft: false
+---
+
+## Intro
+
+This is a sample blog post you can use to test the blog layout and styling. It includes **bold text**, *italic text*, [a link to Astro](https://astro.build), and some inline code like `uv run main.py`.
+
+## Headers and Paragraphs
+
+The current blog setup supports section headers and normal paragraphs well, so this is the best place to write long-form explanations, notes, tutorials, or project updates.
+
+You can also split your writing into multiple paragraphs like this one to make the page easier to read.
+
+### Smaller Section
+
+This is a smaller subsection using a level-3 heading.
+
+## Image Example
+
+Below is an example image rendered with plain HTML:
+
+<img src="/images/projects/efficient-transfer.svg" alt="Sample project illustration" style="width:100%; max-width:720px; border-radius:12px; border:1px solid rgba(0,0,0,0.08); padding:12px; background:rgba(255,255,255,0.5);" />
+
+## Code Example
+
+For multiline code, raw HTML works reliably with the current renderer:
+
+<pre><code class="language-python">from pathlib import Path
+
+def summarize_project(name: str) -&gt; str:
+    return f"Project: {name}"
+
+print(summarize_project("football-analysis"))</code></pre>
+
+## Lists
+
+<ul>
+  <li>Item one in a bulleted list</li>
+  <li>Item two with a bit more explanation</li>
+  <li>Item three to show spacing and typography</li>
+</ul>
+
+<ol>
+  <li>First ordered step</li>
+  <li>Second ordered step</li>
+  <li>Third ordered step</li>
+</ol>
+
+## Quote
+
+<blockquote>
+  Good technical writing is not only about accuracy, but also about clarity.
+</blockquote>
+
+## Mixed Content
+
+You can combine explanatory text, visuals, and code in the same article to publish:
+
+<ul>
+  <li>project writeups</li>
+  <li>research notes</li>
+  <li>tutorials</li>
+  <li>devlogs</li>
+</ul>
+
+That makes the blog useful both as a public writing space and as a lightweight technical portfolio.
