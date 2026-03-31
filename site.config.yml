@@ -42,7 +42,7 @@ pages:
   gallery: false
   books: false
   media: false
-  travel: true
+  travel: false
 
 theme:
   cursor_spotlight: false
