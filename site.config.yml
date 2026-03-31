@@ -38,7 +38,7 @@ pages:
   collaborators: false
   service: false
   repositories: true
-  blog: true
+  blog: false
   gallery: false
   books: false
   media: false
