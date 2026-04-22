@@ -9,4 +9,8 @@ repositories:
     url: "https://github.com/JoseGG5/easyhnsw"
     language: "Python"
     stars: 0
-
+  - name: "project-horizon"
+    description: "ModernBERT fine-tuning pipeline for retrieval of complex scientific projects"
+    url: "https://github.com/JoseGG5/project-horizon"
+    language: "Python"
+    stars: 0
