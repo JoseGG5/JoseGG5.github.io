@@ -20,26 +20,25 @@ Take a frozen image encoder such as [DINOv2](https://huggingface.co/facebook/din
 
 Then train a linear probe on top of those frozen embeddings to classify a given binary attribute:
 
-<pre><code>score(x) = w^T z + b</code></pre>
+$$
+\mathrm{score}(x) = w^\top z + b
+$$
 
 where `z` is the image embedding and `w` is the learned probe weight vector.
-
-<iframe
-  src="/images/blogs/latentlens/latentlens-hyperplane.html"
-  title="Interactive hyperplane view for LatentLens"
-  style="width:100%; height:640px; border:1px solid rgba(0,0,0,0.08); border-radius:12px; background:white;"
-  loading="lazy"
-></iframe>
 
 The key move is to stop thinking of `w` as just a classifier parameter and start treating it as a semantic direction. If the probe can reliably separate images with and without eyeglasses, then its weight vector is telling us something about where that concept lives in representation space.
 
 Once we normalize the direction,
 
-<pre><code>u = w / ||w||</code></pre>
+$$
+u = \frac{w}{\lVert w \rVert}
+$$
 
 we can edit a query embedding by adding some amount of that direction:
 
-<pre><code>z_ctrl = normalize(z + alpha * u)</code></pre>
+$$
+z_{\mathrm{ctrl}} = \mathrm{normalize}(z + \alpha u)
+$$
 
 and then run nearest-neighbor retrieval with the edited query instead of the original one.
 
@@ -51,16 +50,23 @@ I like this setup because it tests something very concrete. If a concept is line
 
 If the answer is yes, that means we may be able to do things like:
 
-<ul>
-  <li>bias retrieval toward a target attribute without retraining the backbone</li>
-  <li>turn semantic probes into reusable retrieval controls</li>
-  <li>study what concepts are approximately linear in representation space</li>
-  <li>build intuition for simple, interpretable interventions before reaching for heavier methods</li>
+<ul style="list-style: disc; padding-left: 1.5rem;">
+  <li>Bias retrieval toward a target attribute without retraining the backbone.</li>
+  <li>Turn semantic probes into reusable retrieval controls.</li>
+  <li>Study what concepts are approximately linear in representation space.</li>
+  <li>Build intuition for simple, interpretable interventions before reaching for heavier methods.</li>
 </ul>
 
 I find that appealing. There is something satisfying about getting useful behavior out of geometry alone.
 
 There is an important caveat, though. This only works if the embeddings are good enough that the concept we care about is encoded in a roughly linear way. In practice, that means a simple linear layer should be able to separate the concept with reasonably high accuracy, or equivalently, a hyperplane should exist that cleanly divides positive and negative examples in the embedding space. If that linear separability is not there, then the probe weight is much less trustworthy as a semantic direction and the steering effect will likely be weak, unstable, or just wrong.
+
+<iframe
+  src="/images/blogs/latentlens/latentlens-hyperplane.html"
+  title="Interactive hyperplane view for LatentLens"
+  style="width:100%; height:640px; border:1px solid rgba(0,0,0,0.08); border-radius:12px; background:white;"
+  loading="lazy"
+></iframe>
 
 
 ## The experiment
@@ -77,33 +83,34 @@ Finally, I retrieve the nearest neighbors from the full embedding bank and inspe
 
 This is where the experiment became fun.
 
-At `alpha = 0`, retrieval behaves as expected. We are just using the original query embedding, so the returned neighbors mostly reflect the original identity and appearance cues.
-
-At `alpha = 1`, the edit starts to matter. Eyeglasses begin to show up in the retrieved set, but the results still feel close to the original query.
-
-At `alpha = 2`, the intervention becomes much stronger. The retrieved neighbors now consistently show women with eyeglasses. The steering is no longer subtle.
-
-At `alpha = 3`, the attribute begins to dominate retrieval. The system becomes so focused on glasses that some of the original cues appear less important than before.
-
-That progression is the main reason I wanted to write about this project. The effect is not random noise. It looks structured. A small linear edit creates a coherent and interpretable shift in retrieval behavior.
-
 ### `alpha = 0`
+
+At `alpha = 0`, retrieval behaves as expected. We are just using the original query embedding, so the returned neighbors mostly reflect the original identity and appearance cues.
 
 <img src="https://raw.githubusercontent.com/JoseGG5/latentlens/main/results/control_vector/CelebA-attrs-160k/dinov2-base/alpha_0.png" alt="Retrieval results for alpha equals 0 in the LatentLens eyeglasses experiment" style="width:100%; max-width:720px; border-radius:12px; border:1px solid rgba(0,0,0,0.08); padding:12px; background:rgba(255,255,255,0.6);" />
 
+
 ### `alpha = 1`
+
+At `alpha = 1`, the edit starts to matter. Eyeglasses begin to show up in the retrieved set, but the results still feel close to the original query.
 
 <img src="https://raw.githubusercontent.com/JoseGG5/latentlens/main/results/control_vector/CelebA-attrs-160k/dinov2-base/alpha_1.png" alt="Retrieval results for alpha equals 1 in the LatentLens eyeglasses experiment" style="width:100%; max-width:720px; border-radius:12px; border:1px solid rgba(0,0,0,0.08); padding:12px; background:rgba(255,255,255,0.6);" />
 
 ### `alpha = 2`
 
+At `alpha = 2`, the intervention becomes much stronger. The retrieved neighbors now consistently show women with eyeglasses. The steering is no longer subtle.
+
 <img src="https://raw.githubusercontent.com/JoseGG5/latentlens/main/results/control_vector/CelebA-attrs-160k/dinov2-base/alpha_2.png" alt="Retrieval results for alpha equals 2 in the LatentLens eyeglasses experiment" style="width:100%; max-width:720px; border-radius:12px; border:1px solid rgba(0,0,0,0.08); padding:12px; background:rgba(255,255,255,0.6);" />
 
 ### `alpha = 3`
 
+At `alpha = 3`, the attribute begins to dominate retrieval. The system becomes so focused on glasses that some of the original cues appear less important than before.
+
 <img src="https://raw.githubusercontent.com/JoseGG5/latentlens/main/results/control_vector/CelebA-attrs-160k/dinov2-base/alpha_3.png" alt="Retrieval results for alpha equals 3 in the LatentLens eyeglasses experiment" style="width:100%; max-width:720px; border-radius:12px; border:1px solid rgba(0,0,0,0.08); padding:12px; background:rgba(255,255,255,0.6);" />
 
-## What I Think Is Going On
+That progression is the main reason I wanted to write about this project. The effect is not random noise. It looks structured. A small linear edit creates a coherent and interpretable shift in retrieval behavior.
+
+## What is happening
 
 My working interpretation is simple: the frozen encoder already contains a fairly usable semantic axis for `Eyeglasses`, and the linear probe is recovering it well enough for retrieval-time control.
 
@@ -121,15 +128,15 @@ That is obviously not the same thing as what I do in LatentLens. RASA removes a 
 
 The project is conceptually inspired by that viewpoint. LatentLens does not implement RASA directly, but it borrows the same mindset:
 
-<ul>
-  <li>learn something linear from a frozen representation</li>
-  <li>interpret that linear object as structure in feature space</li>
-  <li>modify retrieval behavior by editing the representation itself</li>
+<ul style="list-style: disc; padding-left: 1.5rem;">
+  <li>Learn something linear from a frozen representation.</li>
+  <li>Interpret that linear object as structure in feature space.</li>
+  <li>Modify retrieval behavior by editing the representation itself.</li>
 </ul>
 
 In LatentLens I use the additive version of that idea. Instead of removing a direction, I push the query along it. But both approaches come from the same underlying belief: representation spaces are worth manipulating directly.
 
-## Applications on search systems
+## Applications in search systems
 
 I think this idea gets especially interesting in search systems.
 
@@ -139,12 +146,14 @@ That is a much more precise retrieval problem. You want to preserve most of the 
 
 In principle, a control-vector approach gives you a simple way to try that. You could train a linear probe to distinguish `red` from `non-red` items, extract the corresponding direction in embedding space, and then steer the query in the negative direction of that control vector. If the embedding space is well behaved enough, retrieval might keep the core product semantics while walking away from the color attribute.
 
+<img src="/images/blogs/latentlens/search-steering.svg" alt="Illustration of search steering from a red t-shirt query toward the same t-shirt in different colors" style="width:100%; max-width:860px; border-radius:12px; border:1px solid rgba(0,0,0,0.08); padding:8px; background:rgba(255,255,255,0.55);" />
+
 Something like this could be useful for:
 
-<ul>
-  <li>fashion search where users want the same garment in a different color</li>
-  <li>furniture or decor search where material or finish should change but shape should remain similar</li>
-  <li>marketplaces where the user wants one attribute edited without losing the rest of the item identity</li>
+<ul style="list-style: disc; padding-left: 1.5rem;">
+  <li>Fashion search where users want the same garment in a different color.</li>
+  <li>Furniture or decor search where material or finish should change but shape should remain similar.</li>
+  <li>Marketplaces where the user wants one attribute edited without losing the rest of the item identity.</li>
 </ul>
 
 Of course, this only works cleanly if the attribute direction is reasonably linear and not too entangled with the rest of the representation. That is a big "if." But even as a lightweight retrieval-time control, it feels like a promising idea. You do not need to retrain the entire search system. You just need a frozen embedding space, some labeled examples for the attribute you care about, and a probe that recovers a useful direction.
