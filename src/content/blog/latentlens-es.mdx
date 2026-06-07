@@ -1,0 +1,163 @@
+---
+title: "Steering de atributos y vectores de control"
+date: 2026-03-31
+description: "Un pequeño experimento sobre cómo dirigir la recuperación de imágenes con probes lineales y vectores de control"
+tags: ["Deep Learning", "Research"]
+draft: false
+lang: "es"
+translationKey: "latentlens"
+---
+
+Últimamente he estado pensando en una pregunta muy simple: ¿cuánta estructura semántica está ya presente dentro de un espacio de embeddings visuales congelado?
+
+Esa pregunta me llevó a construir [LatentLens](https://github.com/JoseGG5/latentlens), un repositorio pequeño de investigación alrededor de recuperación controlable. La idea es deliberadamente ligera. Solo un backbone visual preentrenado, un dataset binario de atributos, un probe lineal y una intervención geométrica en el espacio de embeddings.
+
+## TL;DR
+
+Si un concepto está codificado de forma lo bastante lineal dentro de un espacio de embeddings congelado, entonces un probe lineal puede hacer más que clasificarlo: su vector de pesos también puede usarse como dirección de control. En LatentLens, empujar una query a lo largo de una dirección asociada a `Eyeglasses` en el espacio de DINOv2 desplaza gradualmente los vecinos más cercanos hacia imágenes de personas con gafas. Es un experimento pequeño, pero sugiere que los espacios de representación congelados ya podrían ser suficientemente editables para control a nivel de atributo en sistemas de búsqueda.
+
+## La idea
+
+Tomamos un encoder visual congelado como [DINOv2](https://huggingface.co/facebook/dinov2-base). Lo usamos para embeder imágenes de un dataset con etiquetas de atributos. En mi caso usé [CelebA-attrs-160k](https://huggingface.co/datasets/tpremoli/CelebA-attrs-160k), que incluye imágenes de celebridades junto con un conjunto fijo de atributos binarios que describen cada imagen.
+
+Después entrenamos un probe lineal sobre esos embeddings congelados para clasificar un atributo binario dado:
+
+$$
+\mathrm{score}(x) = w^\top z + b
+$$
+
+donde `z` es el embedding de la imagen y `w` es el vector de pesos aprendido por el probe.
+
+La idea clave es dejar de pensar en `w` únicamente como un parámetro de clasificación y empezar a tratarlo como una dirección semántica. Si el probe puede separar de forma fiable imágenes con y sin gafas, entonces su vector de pesos nos está diciendo algo sobre dónde vive ese concepto dentro del espacio de representación.
+
+Una vez normalizamos la dirección,
+
+$$
+u = \frac{w}{\lVert w \rVert}
+$$
+
+podemos editar un embedding de consulta sumándole cierta cantidad de esa dirección:
+
+$$
+z_{\mathrm{ctrl}} = \mathrm{normalize}(z + \alpha u)
+$$
+
+y luego ejecutar recuperación por vecinos más cercanos usando la query editada en lugar de la original.
+
+Ese es todo el experimento.
+
+## Por qué es interesante
+
+Me gusta este setup porque prueba algo muy concreto. Si un concepto es linealmente accesible dentro de un espacio de embeddings congelado, ¿podemos también *usar* esa dirección lineal para controlar la recuperación?
+
+Si la respuesta es sí, eso significaría que podríamos hacer cosas como:
+
+<ul style="list-style: disc; padding-left: 1.5rem;">
+  <li>Sesgar la recuperación hacia un atributo objetivo sin reentrenar el backbone.</li>
+  <li>Convertir probes semánticos en controles reutilizables de retrieval.</li>
+  <li>Estudiar qué conceptos son aproximadamente lineales en el espacio de representación.</li>
+  <li>Construir intuición sobre intervenciones simples e interpretables antes de pasar a métodos más pesados.</li>
+</ul>
+
+Eso me parece atractivo. Hay algo bastante satisfactorio en obtener comportamiento útil solamente a partir de geometría.
+
+Hay una salvedad importante, eso sí. Esto solo funciona si los embeddings son lo bastante buenos como para que el concepto que nos interesa esté codificado de manera aproximadamente lineal. En la práctica, eso significa que una capa lineal simple debería poder separar el concepto con una accuracy razonablemente alta o, dicho de otra forma, que debería existir un hiperplano que divida limpiamente los ejemplos positivos y negativos dentro del espacio de embeddings. Si esa separabilidad lineal no está ahí, entonces el vector del probe es bastante menos fiable como dirección semántica y el efecto de steering probablemente será débil, inestable o directamente incorrecto.
+
+<iframe
+  src="/images/blogs/latentlens/latentlens-hyperplane.html"
+  title="Vista interactiva del hiperplano para LatentLens"
+  style="width:100%; height:640px; border:1px solid rgba(0,0,0,0.08); border-radius:12px; background:white;"
+  loading="lazy"
+></iframe>
+
+## El experimento
+
+El repositorio actual se centra en un ejemplo bastante limpio: dirigir una query hacia el atributo `Eyeglasses`.
+
+Primero construyo un dataset balanceado de ejemplos positivos y negativos para ese atributo. Después entreno un probe lineal sobre embeddings congelados de DINOv2. En el repo, la calidad del probe actúa como sanity check: si el probe no puede clasificar suficientemente bien el atributo, entonces probablemente su dirección no sea fiable como vector de control. Esa es realmente la hipótesis central detrás de todo el método: el concepto tiene que estar codificado de forma lo bastante lineal dentro del espacio de embeddings como para que un hiperplano pueda separarlo.
+
+Después tomo una imagen de consulta sin gafas, la embebo y la muevo a lo largo de la dirección aprendida para gafas usando diferentes valores de `alpha`.
+
+Por último, recupero los vecinos más cercanos desde todo el banco de embeddings e inspecciono cómo cambian las imágenes devueltas.
+
+## Resultados
+
+Aquí es donde el experimento se volvió divertido.
+
+### `alpha = 0`
+
+Con `alpha = 0`, la recuperación se comporta como cabría esperar. Simplemente estamos usando el embedding original de la query, así que los vecinos devueltos reflejan sobre todo las pistas originales de identidad y apariencia.
+
+<img src="https://raw.githubusercontent.com/JoseGG5/latentlens/main/results/control_vector/CelebA-attrs-160k/dinov2-base/alpha_0.png" alt="Resultados de retrieval para alpha igual a 0 en el experimento de gafas de LatentLens" style="width:100%; max-width:720px; border-radius:12px; border:1px solid rgba(0,0,0,0.08); padding:12px; background:rgba(255,255,255,0.6);" />
+
+### `alpha = 1`
+
+Con `alpha = 1`, la edición empieza a notarse. Las gafas comienzan a aparecer en el conjunto recuperado, pero los resultados todavía se sienten cercanos a la query original.
+
+<img src="https://raw.githubusercontent.com/JoseGG5/latentlens/main/results/control_vector/CelebA-attrs-160k/dinov2-base/alpha_1.png" alt="Resultados de retrieval para alpha igual a 1 en el experimento de gafas de LatentLens" style="width:100%; max-width:720px; border-radius:12px; border:1px solid rgba(0,0,0,0.08); padding:12px; background:rgba(255,255,255,0.6);" />
+
+### `alpha = 2`
+
+Con `alpha = 2`, la intervención se vuelve mucho más fuerte. Los vecinos recuperados ahora muestran de forma consistente mujeres con gafas. El steering deja de ser sutil.
+
+<img src="https://raw.githubusercontent.com/JoseGG5/latentlens/main/results/control_vector/CelebA-attrs-160k/dinov2-base/alpha_2.png" alt="Resultados de retrieval para alpha igual a 2 en el experimento de gafas de LatentLens" style="width:100%; max-width:720px; border-radius:12px; border:1px solid rgba(0,0,0,0.08); padding:12px; background:rgba(255,255,255,0.6);" />
+
+### `alpha = 3`
+
+Con `alpha = 3`, el atributo empieza a dominar la recuperación. El sistema se centra tanto en las gafas que algunas de las señales originales de la query parecen perder importancia.
+
+<img src="https://raw.githubusercontent.com/JoseGG5/latentlens/main/results/control_vector/CelebA-attrs-160k/dinov2-base/alpha_3.png" alt="Resultados de retrieval para alpha igual a 3 en el experimento de gafas de LatentLens" style="width:100%; max-width:720px; border-radius:12px; border:1px solid rgba(0,0,0,0.08); padding:12px; background:rgba(255,255,255,0.6);" />
+
+Esa progresión es la razón principal por la que quería escribir sobre este proyecto. El efecto no parece ruido aleatorio. Se ve estructurado. Una pequeña edición lineal crea un cambio coherente e interpretable en el comportamiento del retrieval.
+
+## Qué está pasando
+
+Mi interpretación de trabajo es bastante simple: el encoder congelado ya contiene un eje semántico razonablemente útil para `Eyeglasses`, y el probe lineal lo está recuperando lo bastante bien como para permitir control en tiempo de recuperación.
+
+Eso no significa que el concepto esté perfectamente disentangled. Tampoco significa que la dirección sea pura. De hecho, una de las observaciones interesantes es que un steering más fuerte parece intercambiar algunas otras propiedades de la query original. Eso es exactamente lo que cabría esperar si la representación mezcla varios atributos correlacionados entre sí.
+
+Así que esto no es magia. Es geometría con compromisos.
+
+## Pensar en términos de proyecciones
+
+Otra razón por la que este repo existe es el paper [*Franca: Nested Matryoshka Clustering for Scalable Visual Representation Learning*](https://arxiv.org/abs/2507.14137) de Venkataramanan, Pariza, Salehi, Knobel, Gidaris, Ramzi, Bursuc y Asano. A grandes rasgos, Franca es un vision foundation model abierto construido sobre una pipeline auto-supervisada escalable. Una parte importante del paper trata de aprender buenas representaciones visuales con cabezas de clustering tipo Matryoshka, pero la parte que más me llamó la atención fue su tratamiento geométrico del sesgo posicional.
+
+Franca introduce RASA, siglas de Removal of Absolute Spatial Attributes. El problema que atacan es que las representaciones de parches en ViTs pueden acabar mezcladas con la posición absoluta, de modo que algunos clusters se activan porque un parche suele aparecer en cierta región de la imagen y no porque transporte un patrón genuinamente semántico. Su solución es elegante: aprender una pequeña cabeza lineal que prediga coordenadas de parche a partir de embeddings de parche, usar eso para identificar un subespacio posicional y después restar la proyección de cada feature sobre ese subespacio. Dicho de otra forma, intentan eliminar la componente linealmente predecible del "dónde" para conservar más del "qué".
+
+Obviamente eso no es lo mismo que hago en LatentLens. RASA elimina una dirección de nuisance, mientras que mi experimento añade una dirección semántica para dirigir la recuperación. Pero ambos métodos comparten la misma intuición geométrica: aprender algo lineal a partir de una representación congelada y luego manipular directamente el espacio de representación en lugar de reentrenar todo el modelo.
+
+El proyecto está inspirado conceptualmente en esa forma de pensar. LatentLens no implementa RASA directamente, pero sí toma prestada esa mentalidad:
+
+<ul style="list-style: disc; padding-left: 1.5rem;">
+  <li>Aprender algo lineal a partir de una representación congelada.</li>
+  <li>Interpretar ese objeto lineal como estructura dentro del espacio de features.</li>
+  <li>Modificar el comportamiento del retrieval editando la representación misma.</li>
+</ul>
+
+En LatentLens uso la versión aditiva de esa idea. En lugar de eliminar una dirección, empujo la query a lo largo de ella. Pero ambos enfoques parten de la misma creencia de fondo: merece la pena manipular directamente los espacios de representación.
+
+## Aplicaciones en sistemas de búsqueda
+
+Creo que esta idea se vuelve especialmente interesante en sistemas de búsqueda.
+
+Imagina que una persona ha encontrado una camiseta roja que le gusta. Lo que realmente quiere no es "enséñame más camisetas rojas". Lo que quiere es "enséñame exactamente esta misma camiseta, pero en otros colores".
+
+Ese es un problema de retrieval mucho más preciso. Quieres preservar la mayor parte de la identidad del producto, su forma, su estilo y su textura, mientras cambias solo una propiedad.
+
+En principio, un enfoque basado en vectores de control te da una forma simple de intentarlo. Podrías entrenar un probe lineal para distinguir `red` de `non-red`, extraer la dirección correspondiente en el espacio de embeddings y después mover la query en la dirección negativa de ese vector de control. Si el espacio de embeddings se comporta lo bastante bien, la recuperación podría conservar la semántica central del producto mientras se aleja del atributo color.
+
+<img src="/images/blogs/latentlens/search-steering.svg" alt="Ilustración de steering en búsqueda desde una camiseta roja hacia la misma camiseta en diferentes colores" style="width:100%; max-width:860px; border-radius:12px; border:1px solid rgba(0,0,0,0.08); padding:8px; background:rgba(255,255,255,0.55);" />
+
+Algo así podría ser útil para:
+
+<ul style="list-style: disc; padding-left: 1.5rem;">
+  <li>Búsqueda en moda donde el usuario quiere la misma prenda en otro color.</li>
+  <li>Búsqueda de muebles o decoración donde el material o el acabado deben cambiar, pero la forma debería mantenerse similar.</li>
+  <li>Marketplaces donde el usuario quiere editar un atributo sin perder el resto de la identidad del item.</li>
+</ul>
+
+Por supuesto, esto solo funciona de forma limpia si la dirección del atributo es razonablemente lineal y no está demasiado entremezclada con el resto de la representación. Ese es un gran "si". Pero incluso como control ligero en tiempo de recuperación, me parece una idea prometedora. No necesitas reentrenar todo el sistema de búsqueda. Solo necesitas un espacio de embeddings congelado, algunos ejemplos etiquetados para el atributo que te interesa y un probe que recupere una dirección útil.
+
+## Idea final
+
+Si un probe lineal puede recuperar un concepto, hay una buena probabilidad de que ese concepto no solo sea detectable sino también operativo. Podemos movernos a través de él, amplificarlo, suprimirlo y observar cómo cambia el comportamiento.

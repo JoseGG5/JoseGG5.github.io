@@ -8,7 +8,7 @@ import rehypeKatex from 'rehype-katex';
 export default defineConfig({
   // Replace with your actual GitHub Pages URL
   site: 'https://JoseGG5.github.io',
-  integrations: [mdx(), sitemap()],
+  integrations: [mdx({ remarkPlugins: [remarkMath], rehypePlugins: [rehypeKatex] }), sitemap()],
   output: 'static',
   vite: {
     plugins: [tailwindcss()],

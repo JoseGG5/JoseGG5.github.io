@@ -2,53 +2,54 @@
 import BaseLayout from '@components/layout/BaseLayout.astro';
 import PostCard from '@components/blog/PostCard.astro';
 import { getConfig } from '@lib/config';
-import { calculateReadingTime } from '@lib/utils';
-import fs from 'node:fs';
-import path from 'node:path';
+import { calculateReadingTime, groupBy } from '@lib/utils';
+import { getCollection } from 'astro:content';
 
 const config = getConfig();
 if (!config.pages.blog) return Astro.redirect('/404');
 
-const blogDir = path.resolve(process.cwd(), 'src/content/blog');
+type BlogLang = 'en' | 'es';
 
-let posts: any[] = [];
-try {
-  const files = fs.readdirSync(blogDir).filter(f => f.endsWith('.mdx') || f.endsWith('.md'));
-  for (const file of files) {
-    const raw = fs.readFileSync(path.join(blogDir, file), 'utf-8');
-    const fmMatch = raw.match(/^---\n([\s\S]*?)\n---\n([\s\S]*)$/);
-    if (!fmMatch) continue;
-    const fm = fmMatch[1];
-    const content = fmMatch[2];
-    const title = fm.match(/title:\s*"(.+?)"/)?.[1] || '';
-    const dateStr = fm.match(/date:\s*(.+)/)?.[1]?.trim() || '';
-    const description = fm.match(/description:\s*"(.+?)"/)?.[1] || '';
-    const draft = fm.includes('draft: true');
-    const tagsMatch = fm.match(/tags:\s*\[([^\]]*)\]/);
-    const tags = tagsMatch ? tagsMatch[1].split(',').map(t => t.trim().replace(/"/g, '')) : [];
-    const slug = file.replace(/\.(mdx?|md)$/, '');
+const rawPosts = await getCollection('blog', ({ data }) => !data.draft);
+const posts = rawPosts
+  .map((entry) => ({
+    slug: entry.slug,
+    title: entry.data.title,
+    description: entry.data.description,
+    date: entry.data.date,
+    tags: entry.data.tags ?? [],
+    lang: (entry.data.lang ?? 'en') as BlogLang,
+    translationKey: entry.data.translationKey ?? entry.slug,
+    readingTime: calculateReadingTime(entry.body),
+  }))
+  .sort((a, b) => b.date.getTime() - a.date.getTime());
 
-    if (!draft) {
-      posts.push({ title, date: new Date(dateStr), description, tags, slug, content, readingTime: calculateReadingTime(content) });
-    }
-  }
-} catch {}
-
-posts.sort((a, b) => b.date.getTime() - a.date.getTime());
-const allTags = [...new Set(posts.flatMap(p => p.tags))].sort();
+const groupedPosts = Object.values(groupBy(posts, (post) => post.translationKey)).map((variants) =>
+  [...variants].sort((a, b) => a.lang.localeCompare(b.lang))
+);
+const allTags = [...new Set(posts.flatMap((post) => post.tags))].sort();
 ---
 
 <BaseLayout title="Blog" description="Blog posts and articles">
   <div class="animate-on-scroll">
     <div class="page-header">
-      <h1 class="text-3xl font-bold">Blog</h1>
-      <p class="text-[var(--color-text-secondary)] mt-2">{posts.length} posts</p>
+      <div class="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <h1 class="text-3xl font-bold">Blog</h1>
+          <p class="text-[var(--color-text-secondary)] mt-2">{groupedPosts.length} posts</p>
+        </div>
+
+        <div class="inline-flex rounded-full border border-[var(--color-border)] bg-[var(--color-card-bg)] p-1" id="language-toggle">
+          <button data-lang="en" class="lang-chip px-3 py-1 rounded-full text-xs font-medium bg-[var(--color-accent)] text-white transition-colors">English</button>
+          <button data-lang="es" class="lang-chip px-3 py-1 rounded-full text-xs font-medium text-[var(--color-text-secondary)] transition-colors">Español</button>
+        </div>
+      </div>
     </div>
 
     {allTags.length > 0 && (
       <div class="flex flex-wrap gap-2 mb-8" id="tag-filters">
         <button data-tag="all" class="tag-chip px-3 py-1.5 rounded-full text-xs font-medium bg-[var(--color-accent)] text-white transition-colors">All</button>
-        {allTags.map(tag => (
+        {allTags.map((tag) => (
           <button data-tag={tag} class="tag-chip px-3 py-1.5 rounded-full text-xs font-medium bg-[var(--color-border)]/50 text-[var(--color-text-secondary)] hover:bg-[var(--color-accent)]/10 hover:text-[var(--color-accent)] transition-colors">{tag}</button>
         ))}
       </div>
@@ -56,40 +57,84 @@ const allTags = [...new Set(posts.flatMap(p => p.tags))].sort();
   </div>
 
   <div class="space-y-6" id="posts-list">
-    {posts.map(post => (
-      <div data-post-card data-tags={post.tags.join(',')}>
-        <PostCard
-          title={post.title}
-          description={post.description}
-          date={post.date}
-          tags={post.tags}
-          slug={post.slug}
-          readingTime={post.readingTime}
-        />
+    {groupedPosts.map((variants) => (
+      <div
+        data-post-group
+        data-tags={variants.flatMap((post) => post.tags).join(',')}
+      >
+        {variants.map((post) => (
+          <div data-post-variant data-lang={post.lang} class={post.lang === 'en' ? '' : 'hidden'}>
+            <PostCard
+              title={post.title}
+              description={post.description}
+              date={post.date}
+              tags={post.tags}
+              slug={post.slug}
+              readingTime={post.readingTime}
+            />
+          </div>
+        ))}
       </div>
     ))}
   </div>
 
-  {posts.length === 0 && (
+  {groupedPosts.length === 0 && (
     <p class="text-center text-[var(--color-text-secondary)] py-12">No blog posts yet. Add .mdx files to src/content/blog/ to get started.</p>
   )}
 
   <script>
     document.addEventListener('astro:page-load', () => {
-      const chips = document.querySelectorAll('.tag-chip');
-      const cards = document.querySelectorAll('[data-post-card]');
-      chips.forEach(chip => {
-        chip.addEventListener('click', () => {
-          chips.forEach(c => { c.classList.remove('bg-[var(--color-accent)]', 'text-white'); c.classList.add('bg-[var(--color-border)]/50', 'text-[var(--color-text-secondary)]'); });
-          chip.classList.add('bg-[var(--color-accent)]', 'text-white'); chip.classList.remove('bg-[var(--color-border)]/50', 'text-[var(--color-text-secondary)]');
-          const tag = (chip as HTMLElement).dataset.tag;
-          cards.forEach(card => {
-            const el = card as HTMLElement;
-            const tags = el.dataset.tags?.split(',') || [];
-            el.style.display = (tag === 'all' || tags.includes(tag!)) ? '' : 'none';
+      const tagChips = document.querySelectorAll('.tag-chip');
+      const langChips = document.querySelectorAll('.lang-chip');
+      const groups = document.querySelectorAll('[data-post-group]');
+
+      let activeTag = 'all';
+      let activeLang = 'en';
+
+      function updateFilters() {
+        groups.forEach((group) => {
+          const el = group as HTMLElement;
+          const tags = (el.dataset.tags || '').split(',').filter(Boolean);
+          const variants = el.querySelectorAll('[data-post-variant]');
+
+          variants.forEach((variant) => {
+            const variantEl = variant as HTMLElement;
+            variantEl.classList.toggle('hidden', variantEl.dataset.lang !== activeLang);
           });
+
+          const matchesTag = activeTag === 'all' || tags.includes(activeTag);
+          const hasLangVariant = Array.from(variants).some((variant) => (variant as HTMLElement).dataset.lang === activeLang);
+          el.style.display = matchesTag && hasLangVariant ? '' : 'none';
+        });
+      }
+
+      tagChips.forEach((chip) => {
+        chip.addEventListener('click', () => {
+          tagChips.forEach((item) => {
+            item.classList.remove('bg-[var(--color-accent)]', 'text-white');
+            item.classList.add('bg-[var(--color-border)]/50', 'text-[var(--color-text-secondary)]');
+          });
+          chip.classList.add('bg-[var(--color-accent)]', 'text-white');
+          chip.classList.remove('bg-[var(--color-border)]/50', 'text-[var(--color-text-secondary)]');
+          activeTag = (chip as HTMLElement).dataset.tag || 'all';
+          updateFilters();
         });
       });
+
+      langChips.forEach((chip) => {
+        chip.addEventListener('click', () => {
+          langChips.forEach((item) => {
+            item.classList.remove('bg-[var(--color-accent)]', 'text-white');
+            item.classList.add('text-[var(--color-text-secondary)]');
+          });
+          chip.classList.add('bg-[var(--color-accent)]', 'text-white');
+          chip.classList.remove('text-[var(--color-text-secondary)]');
+          activeLang = (chip as HTMLElement).dataset.lang || 'en';
+          updateFilters();
+        });
+      });
+
+      updateFilters();
     });
   </script>
 </BaseLayout>
