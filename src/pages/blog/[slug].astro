@@ -12,7 +12,7 @@ type BlogLang = 'en' | 'es';
 
 const languageLabel: Record<BlogLang, string> = {
   en: 'English',
-  es: 'Español',
+  es: 'Spanish',
 };
 
 const rawPosts = await getCollection('blog', ({ data }) => !data.draft);
@@ -45,6 +45,14 @@ const translations = posts
   .sort((a, b) => a.lang.localeCompare(b.lang));
 
 const { Content, headings } = await render(post.entry);
+const tocHeadings = headings
+  .filter((heading) => heading.depth === 2 || heading.depth === 3)
+  .map((heading) => ({
+    depth: heading.depth,
+    text: heading.text,
+    id: heading.slug,
+  }));
+
 export async function getStaticPaths() {
   const posts = await getCollection('blog', ({ data }) => !data.draft);
   return posts.map((post) => ({
@@ -70,7 +78,7 @@ export async function getStaticPaths() {
             {translations.map((item) => (
               <a
                 href={`/blog/${item.slug}`}
-                class={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${item.slug === post.slug ? 'bg-[var(--color-accent)] text-white' : 'text-[var(--color-text-secondary)] hover:text-[var(--color-accent)]'}`}
+                class={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${item.slug === post.slug ? 'bg-[var(--color-accent)]/12 text-[var(--color-accent)]' : 'text-[var(--color-text-secondary)] hover:text-[var(--color-accent)] hover:bg-[var(--color-accent)]/6'}`}
                 aria-current={item.slug === post.slug ? 'page' : undefined}
               >
                 {languageLabel[item.lang]}
@@ -93,9 +101,9 @@ export async function getStaticPaths() {
         <Content />
       </div>
 
-      {headings.length > 2 && config.blog.show_table_of_contents && (
+      {tocHeadings.length > 2 && config.blog.show_table_of_contents && (
         <aside class="hidden xl:block w-56 shrink-0">
-          <TableOfContents headings={headings.filter((heading) => heading.depth === 2 || heading.depth === 3)} />
+          <TableOfContents headings={tocHeadings} />
         </aside>
       )}
     </div>

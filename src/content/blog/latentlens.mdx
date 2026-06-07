@@ -8,7 +8,7 @@ lang: "en"
 translationKey: "latentlens"
 ---
 
-I have been thinking about a simple question lately: how much semantic structure is already sitting inside a frozen vision embedding space?
+This experiment begins with a simple question: how much semantic structure is contained in a frozen visual embedding space?
 
 That question led me to build [LatentLens](https://github.com/JoseGG5/latentlens), a very small research repo around controllable retrieval. The setup is intentionally lightweight. Just a pretrained vision backbone, a binary attribute dataset, a linear probe, and one geometric intervention in embedding space.
 
@@ -148,7 +148,7 @@ That is a much more precise retrieval problem. You want to preserve most of the 
 
 In principle, a control-vector approach gives you a simple way to try that. You could train a linear probe to distinguish `red` from `non-red` items, extract the corresponding direction in embedding space, and then steer the query in the negative direction of that control vector. If the embedding space is well behaved enough, retrieval might keep the core product semantics while walking away from the color attribute.
 
-<img src="/images/blogs/latentlens/search-steering.svg" alt="Illustration of search steering from a red t-shirt query toward the same t-shirt in different colors" style="width:100%; max-width:860px; border-radius:12px; border:1px solid rgba(0,0,0,0.08); padding:8px; background:rgba(255,255,255,0.55);" />
+<img src="/images/blogs/latentlens/english-search.png" alt="Illustration of search steering from a red t-shirt query toward the same t-shirt in different colors" style="width:100%; max-width:860px; border-radius:12px; border:1px solid rgba(0,0,0,0.08); padding:8px; background:rgba(255,255,255,0.55);" />
 
 Something like this could be useful for:
 
