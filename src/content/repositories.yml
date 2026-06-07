@@ -14,3 +14,8 @@ repositories:
     url: "https://github.com/JoseGG5/project-horizon"
     language: "Python"
     stars: 0
+  - name: "latentlens"
+    description: "LatentLens is a small research repo about controllable retrieval in frozen vision embedding spaces"
+    url: "https://github.com/JoseGG5/latentlens"
+    language: "Python"
+    stars: 0
