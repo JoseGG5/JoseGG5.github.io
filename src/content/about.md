@@ -2,7 +2,7 @@ Hello! 👋 I'm currently a Deep Learning Engineer at CTN. I have a Bachelor's d
 
 In my free time, I enjoy combining three passions of mine (learning, teaching, and creating) by producing educational content for [my YouTube channel](https://www.youtube.com/@josegglog), conducting research and testing ideas that get into my mind, and building cool software projects.
 
-My research interests lie in Self-Supervised Learning applied to audio and images, and in training robust encoder models that can be leveraged across a wide range of downstream tasks. I believe that real intelligence lies in encoder-only models.
+My research interests lie in Self-Supervised Learning and representation learning, and in training robust encoder models that can be leveraged across a wide range of downstream tasks.
 
 As Ferris Bueller once said: "Life moves pretty fast. If you don't stop and look around once in a while, you could miss it." I try to apply this mindset in my daily life.
 
